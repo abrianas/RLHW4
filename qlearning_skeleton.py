@@ -48,41 +48,43 @@ class QLearning(object):
 # run the greedy policy (no randomness) on the environment for niter number of times
 # and return the fraction of times that it reached the goal
 def evaluate_greedy_policy(qlearning, env, niter=100):
-    # TODO: write training code here
-    tstep_reward = [] 
+    tstep_rewards = [] 
     
     for e in range(num_episodes):
         state = env.reset()
-        total = 0
+        total = 0 # stores the sum of rewards per episode
         t = 0
+        goal = 0 # stores the number of times the goal is reached in niter-steps
         done = False
         while t<niter:
             t += 1
-            action = tabular_epsilon_greedy_policy(qlearning.Q, eps, state, True) # we want randomness
+            action = tabular_epsilon_greedy_policy(qlearning.Q, eps, state, True) # we want NO randomness
             next_state, reward, done = env.step(action)
             total += reward
+            if reward > 0: # if the goal is reached, the reward will be positive
+                goal += 1
             qlearning.update(state, action, reward, next_state, done)
             state = next_state
             if done:
-                tstep_reward.append(total)
+                tstep_rewards.append(total)
                 break
-        
-    # must the number of times the goal is reached    
-    return tstep_reward
+    
+    # returns the fraction of times that the policy reached the goal
+    frac = goal/niter
+    return tstep_rewards, frac
 
 
 # this function will take in an environment(GridWorld),
 # a Qlearning object,
 # an epsilon in the range [0, 1],
 # and the number of episodes you want to run the algorithm for
-# Returns ...
-def offTD(env, qlearning, num_episodes, eps):
-    # TODO: write training code here
-    tstep_reward = [] 
+# Returns the sum of the rewards at each timestep for each episode
+def offpolicyTD(env, qlearning, num_episodes, eps):
+    tstep_rewards = [] 
     
     for e in range(num_episodes):
         state = env.reset()
-        total = 0
+        total = 0 # stores the sum of rewards per timestep
         done = False
         while True:
             action = tabular_epsilon_greedy_policy(qlearning.Q, eps, state, False) # we want randomness
@@ -91,19 +93,19 @@ def offTD(env, qlearning, num_episodes, eps):
             qlearning.update(state, action, reward, next_state, done)
             state = next_state
             if done:
-                tstep_reward.append(total)
+                tstep_rewards.append(total)
                 break
         
     # must print out iteration number for one of the questions    
-    return tstep_reward
+    return tstep_rewards
 
 if __name__ == "__main__":
     num_episodes = 1000
     eps = 0.1
     env = GridWorld(MAP3)
     qlearning = QLearning(env.get_num_states(), env.get_num_actions())
-    tstep_reward = offTD(env, qlearning, num_episodes, eps)
-    plt.plot(tstep_reward)
+    tstep_rewards = offpolicyTD(env, qlearning, num_episodes, eps)
+    plt.plot(tstep_rewards)
     plt.xlabel("Number of Episodes")
     plt.ylabel("Total Rewards")
     plt.title("eps-Greedy w/ Randomness")
