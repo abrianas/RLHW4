@@ -9,13 +9,13 @@ import gym
 # an epsilon in the range [0, 1] and the state
 # to output actions according to an Epsilon-Greedy policy
 # (random actions are chosen with epsilon probability)
-def tabular_epsilon_greedy_policy(Q, eps, state, rand_flag): ###
-    # if rand_flag=True then no random actions are selected
+def tabular_epsilon_greedy_policy(Q, eps, state, rand_flag): 
+    # if rand_flag=True then no random actions are selected (truly greedy policy)
     n_actions = Q.shape[1]
-    if rand_flag or np.random.rand() > eps:
+    if rand_flag or np.random.rand() > eps: # flip to less than sign if eps>0.5
         action = np.argmax(Q[state, :])
     else:
-        action = np.random.randint(0, n_actions)
+        action = np.random.randint(0, n_actions)  
     return action
 
 
@@ -53,11 +53,9 @@ def evaluate_greedy_policy(qlearning, env, niter=100):
     for e in range(niter):
         state = env.reset()
         total = 0 # stores the sum of rewards per episode
-        t = 0
         num_goals = 0 # stores the number of times the goal is reached in niter-steps
         done = False
         while True:
-            t += 1
             action = tabular_epsilon_greedy_policy(qlearning.Q, eps, state, True) # we want NO randomness
             next_state, reward, done = env.step(action)
             total += reward
@@ -84,8 +82,9 @@ def evaluate_greedy_policy(qlearning, env, niter=100):
 def offpolicyTD(env, qlearning, num_episodes, eps):
     tstep_rewards = []
     qvalues = []
-    
-    
+    saveQ = np.zeros((env.get_num_states(), env.get_num_actions()))
+    randtime = 0
+    q_optimal = 0
     
     for e in range(num_episodes):
         state = env.reset()
@@ -99,6 +98,11 @@ def offpolicyTD(env, qlearning, num_episodes, eps):
             # append results to the episode log
             episode_log.append([state, action])
             
+            # for part b of q2 - save the Q table at a pt in time before the Q-values converge
+            randtime += 1
+            if randtime==5:
+                saveQ = qlearning.Q
+                
             total += reward
             qlearning.update(state, action, reward, next_state, done)
             state = next_state
@@ -117,37 +121,63 @@ def offpolicyTD(env, qlearning, num_episodes, eps):
                 
                 # finds the optimal Q-value 
                 if total>0: ### NEEDS TO BE FIXED
-                    q_optimal = qlearning.Q[state,action]
+                    q_optimal = qlearning.Q[state, action]
                     #print(q_optimal)
                 break
 
-    return tstep_rewards, np.asarray(qvalues), q_optimal
+    return tstep_rewards, np.asarray(qvalues), q_optimal, saveQ, qlearning.Q
 
 if __name__ == "__main__":
     num_episodes = 1000
     eps = 0.1
-    env = GridWorld(MAP2)
+    env = GridWorld(MAP3)
+    
     # for question 1
-    # qlearning = QLearning(env.get_num_states(), env.get_num_actions())
-    # [tstep_rewards,_,_] = offpolicyTD(env, qlearning, num_episodes, eps)
+    qlearning = QLearning(env.get_num_states(), env.get_num_actions())
+    [tstep_rewards,_,_,_,_] = offpolicyTD(env, qlearning, num_episodes, eps)
     # plt.plot(tstep_rewards)
     # plt.xlabel("Number of Episodes")
     # plt.ylabel("Total Rewards")
-    # plt.title("eps-Greedy w/ Randomness")
+    # plt.title("eps-Greedy policy")
     # plt.show()
 
-    # # evaluate the greedy policy to see how well it performs
-    # [_,frac] = evaluate_greedy_policy(qlearning, env)
-    # print("Finding goal " + str(frac*100) + "% of the time.")
-
-    # for question 2
+    # evaluate the greedy policy to see how well it performs
     qlearning = QLearning(env.get_num_states(), env.get_num_actions())
-    [_, qvalue, q_optimal] = offpolicyTD(env, qlearning, num_episodes, eps)
-    plt.plot(qvalue)
-    plt.axhline(y=q_optimal, color='r', linestyle='-') ### how do we know what the optimal Q value is?
+    [tstep_rewards2, frac] = evaluate_greedy_policy(qlearning, env)
+    print("Finding goal " + str(frac*100) + "% of the time.")
+    plt.plot(tstep_rewards[0:100], label='w/ randomness')
+    plt.plot(tstep_rewards2, label='w/o randomness')
     plt.xlabel("Number of Episodes")
-    plt.ylabel("Q Values")
-    plt.title("eps-Greedy w/ Randomness")
-    plt.show()
+    plt.ylabel("Total Rewards")
+    plt.title("Comparsion of two policies")
+    plt.legend()
+    plt.show()    
 
-
+    # for question 2 part a
+    # qlearning = QLearning(env.get_num_states(), env.get_num_actions())
+    # [_, qvalue, q_optimal, saveQ] = offpolicyTD(env, qlearning, num_episodes, eps)
+    # plt.plot(qvalue)
+    # plt.axhline(y=q_optimal, color='r', linestyle='--') ### how do we know what the optimal Q value is?
+    # plt.xlabel("Number of Episodes")
+    # plt.ylabel("Q Values")
+    # plt.title("eps-Greedy w/ Randomness")
+    # plt.show()
+    
+    # for question 2 part b 
+    #print(np.matrix(saveQ))
+    
+    # for question 3 - visualization 
+    # n_episode = 1000
+    # n_rows = len(MAP4)
+    # n_cols = len(MAP4[0])
+    # qlearning = QLearning(env.get_num_states(), env.get_num_actions())
+    # [_,_,_,_, Q] = offpolicyTD(env, qlearning, n_episode, eps)
+    # temp = np.zeros(env.get_num_states())
+    # for s in range(env.get_num_states()):
+        # temp[s] = np.amax(Q[s,:])
+    # newQ = np.reshape(temp,(n_rows,n_cols))
+    # plt.imshow(newQ)
+    # plt.colorbar()
+    # plt.title("maximum Q-value matrix for "+str(n_episode)+" episodes")
+    # plt.show()
+    
