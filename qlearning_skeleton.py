@@ -109,9 +109,10 @@ def offpolicyTD(env, qlearning, num_episodes, eps):
             
             # if done, an episode has been complete, store the results for later            
             if done:
-                # collects the Q-value at the start state for each episode
+                # collects the Q-value for each episode
                 episode_log = np.array(episode_log)
                 for i in range(len(episode_log)):
+                    #qvalues.append(qlearning.Q[episode_log[i,0],episode_log[i,1]]) # for all states
                     if episode_log[i,0]==0: # if at the starting state
                         qvalues.append(qlearning.Q[episode_log[i,0],episode_log[i,1]])
                         break
@@ -120,7 +121,12 @@ def offpolicyTD(env, qlearning, num_episodes, eps):
                 tstep_rewards.append(total)
                 
                 # finds the optimal Q-value(the max over actions of Q(state,action) for each state)
-                q_optimal = np.max(np.asarray(qvalues))
+                #q_optimal = np.max(np.asarray(qvalues))
+                q_optimal = np.max(qlearning.Q)
+                
+                #  iteration number when optimal value is first reached
+                #print(np.argmax(np.asarray(qvalues)))
+                print(np.argmax(qlearning.Q))
                 break
 
     return tstep_rewards, np.asarray(qvalues), q_optimal, saveQ, qlearning.Q
@@ -131,52 +137,52 @@ if __name__ == "__main__":
     env = GridWorld(MAP2)
     
     # for question 1 -- MAP3
-    qlearning = QLearning(env.get_num_states(), env.get_num_actions())
-    [tstep_rewards,_,_,_,_] = offpolicyTD(env, qlearning, num_episodes, eps)
-    plt.plot(tstep_rewards)
-    plt.xlabel("Number of Episodes")
-    plt.ylabel("Total Rewards")
-    plt.title("eps-Greedy policy")
-    plt.show()
+    # qlearning = QLearning(env.get_num_states(), env.get_num_actions())
+    # [tstep_rewards,_,_,_,_] = offpolicyTD(env, qlearning, num_episodes, eps)
+    # plt.plot(tstep_rewards)
+    # plt.xlabel("Number of Episodes")
+    # plt.ylabel("Total Rewards")
+    # plt.title("eps-Greedy policy")
+    # plt.show()
 
     # evaluate the greedy policy to see how well it performs
-    qlearning = QLearning(env.get_num_states(), env.get_num_actions())
-    [tstep_rewards2, frac] = evaluate_greedy_policy(qlearning, env)
-    print("Finding goal " + str(frac*100) + "% of the time.")
-    plt.plot(tstep_rewards[0:100], label='eps-Greedy policy')
-    plt.plot(tstep_rewards2, label='Greedy policy')
-    plt.xlabel("Number of Episodes")
-    plt.ylabel("Total Rewards")
-    plt.title("Comparsion of two policies")
-    plt.legend()
-    plt.show()    
+    # qlearning = QLearning(env.get_num_states(), env.get_num_actions())
+    # [tstep_rewards2, frac] = evaluate_greedy_policy(qlearning, env)
+    # print("Finding goal " + str(frac*100) + "% of the time.")
+    # plt.plot(tstep_rewards[0:100], label='eps-Greedy policy')
+    # plt.plot(tstep_rewards2, label='Greedy policy')
+    # plt.xlabel("Number of Episodes")
+    # plt.ylabel("Total Rewards")
+    # plt.title("Comparsion of two policies")
+    # plt.legend()
+    # plt.show()    
 
     # for question 2 part a -- MAP2
     qlearning = QLearning(env.get_num_states(), env.get_num_actions())
-    [_,qvalue,q_optimal,saveQ,_] = offpolicyTD(env, qlearning, num_episodes, eps)
+    [_,qvalue,q_optimal,saveQ,Q] = offpolicyTD(env, qlearning, num_episodes, eps)
     plt.plot(qvalue, color='c')
     plt.axhline(y=q_optimal, color='r', linestyle='--', label='optimal Q value')
     plt.xlabel("Number of Episodes")
     plt.ylabel("Q Values")
     plt.title("eps-Greedy policy")
     plt.legend()
-    plt.show()
+    plt.show()   
     
     # for question 2 part b -- MAP2
-    print(np.matrix(saveQ)) ### is this all we need to do?
+    #print(np.matrix(saveQ)) ### is this all we need to do?
     
     # for question 3 -- MAP4
-    n_episode = 1000
-    n_rows = len(MAP4)
-    n_cols = len(MAP4[0])
-    qlearning = QLearning(env.get_num_states(), env.get_num_actions())
-    [_,_,_,_,Q] = offpolicyTD(env, qlearning, n_episode, eps)
-    temp = np.zeros(env.get_num_states())
-    for s in range(env.get_num_states()):
-        temp[s] = np.amax(Q[s,:])
-    newQ = np.reshape(temp,(n_rows,n_cols))
-    plt.imshow(newQ)
-    plt.colorbar()
-    plt.title("maximum Q-value matrix for "+str(n_episode)+" episodes")
-    plt.show()
+    # n_episode = 1000
+    # n_rows = len(MAP4)
+    # n_cols = len(MAP4[0])
+    # qlearning = QLearning(env.get_num_states(), env.get_num_actions())
+    # [_,_,_,_,Q] = offpolicyTD(env, qlearning, n_episode, eps)
+    # temp = np.zeros(env.get_num_states())
+    # for s in range(env.get_num_states()):
+        # temp[s] = np.amax(Q[s,:])
+    # newQ = np.reshape(temp,(n_rows,n_cols))
+    # plt.imshow(newQ)
+    # plt.colorbar()
+    # plt.title("maximum Q-value matrix for "+str(n_episode)+" episodes")
+    # plt.show()
     
