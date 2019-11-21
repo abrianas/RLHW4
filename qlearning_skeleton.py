@@ -121,12 +121,10 @@ def offpolicyTD(env, qlearning, num_episodes, eps):
                 tstep_rewards.append(total)
                 
                 # finds the optimal Q-value(the max over actions of Q(state,action) for each state)
-                #q_optimal = np.max(np.asarray(qvalues))
-                q_optimal = np.max(qlearning.Q)
+                q_optimal = np.max(np.asarray(qvalues))
                 
                 #  iteration number when optimal value is first reached
                 #print(np.argmax(np.asarray(qvalues)))
-                print(np.argmax(qlearning.Q))
                 break
 
     return tstep_rewards, np.asarray(qvalues), q_optimal, saveQ, qlearning.Q
