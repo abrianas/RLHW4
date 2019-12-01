@@ -49,7 +49,7 @@ class ActorCritic(object):
     def act(self, state):
         action = np.random.normal(np.dot(state,self.theta),self.sigma)
 
-        return action[0]
+        return action
 
     # TODO: fill in this function that:
     #   1) Computes the value function gradient
@@ -83,7 +83,7 @@ def train(env,policy):
         I = 1
         state = env.reset()
 
-        state = state_normalize(compute2dstate(state))
+        state = state_normalize(state)
         feature_state = rbf(state, centers, rbf_sigma)
         # feature_state = featurizer.transform([state])
         done = False
@@ -96,7 +96,7 @@ def train(env,policy):
 
             # next_state = compute2dstate(next_state)
 
-            next_state = state_normalize(compute2dstate(next_state))
+            next_state = state_normalize(next_state)
             feature_next_state = rbf(next_state, centers, rbf_sigma)
             # feature_next_state = featurizer.transform([next_state])
             policy.update(feature_state, action, reward, feature_next_state, done, I)
@@ -107,14 +107,15 @@ def train(env,policy):
     return
 
 
-def compute2dstate(state):
-
-    theta = np.arctan2(state[1],state[0])
-    state_2d = np.array([theta, state[2]])
-    return state_2d
+# def compute2dstate(state):
+#
+#     theta = np.arctan2(state[1],state[0])
+#     state_2d = np.array([theta, state[2]])
+#     return state_2d
 
 def state_normalize(state):
- return np.array([state[0]/np.pi, state[1]/8.0])
+
+    return np.array([state[0],state[1],state[2]/8.0])
 
 
 
@@ -128,18 +129,21 @@ def rbf(state, centers, rbf_sigma):
 
     return np.asarray(phi)
 #
-def computeRBFcenters(th_low, th_high, th_dot_low, th_dot_high, no_rbf):
-    theta = np.linspace(th_low, th_high, no_rbf)
-    thetadot = np.linspace(th_dot_low, th_dot_high, no_rbf)
-    theta_c, thetadot_c = np.meshgrid(theta, thetadot)
+def computeRBFcenters(high,low,no_rbf):
+    theta_cos = np.linspace(low[0],high[0], no_rbf)
+    theta_sin = np.linspace(low[1],high[1], no_rbf)
+    theta_dot = np.linspace(low[2],high[2], no_rbf)
+    theta_cos_c, theta_sin_c, theta_dot_c = np.meshgrid(theta_cos,theta_sin, theta_dot)
     centers = []
 
     for i in range(0,no_rbf):
         for j in range(0,no_rbf):
-            c = [theta_c[i,j], thetadot_c[i,j]]
-            centers.append(c)
+            for k in range(0,no_rbf):
+                c = [theta_cos_c[i,j,k],theta_sin_c[i,j,k], theta_dot_c[i,j,k]]
+                centers.append(c)
 
     centers = np.asarray(centers)
+
     return centers
 
 
@@ -148,15 +152,12 @@ def computeRBFcenters(th_low, th_high, th_dot_low, th_dot_high, no_rbf):
 if __name__ == "__main__":
     env = PendulumEnv()
 
-    th_low = -1.0
-    th_high = 1.0
-    th_dot_low = -1.0
-    th_dot_high = 1.0
-
-    no_rbf = 10
+    high = [1.0,1.0,1.0]
+    low = [-1.0,-1.0,-1.0]
+    no_rbf = 5
     rbf_sigma = 1.0/(no_rbf - 1)
 
-    centers = computeRBFcenters(th_low, th_high, th_dot_low, th_dot_high, no_rbf)
+    centers = computeRBFcenters(high, low, no_rbf)
     no_centers = len(centers)
     # env.reset()
     # observation_examples = []
@@ -176,5 +177,5 @@ if __name__ == "__main__":
     # # Fit featurizer to our samples
     # featurizer.fit(np.array(observation_examples))
     # no_centers = 400
-    policy = ActorCritic(env,2,1,no_centers)
+    policy = ActorCritic(env,3,1,no_centers)
     train(env, policy)
