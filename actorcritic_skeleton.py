@@ -12,7 +12,7 @@ class ActorCritic(object):
     # TODO fill in this function to set up the Actor Critic model.
     # You may add extra parameters to this function to help with discretization
     # Also, you will need to tune the sigma value and learning rates
-    def __init__(self, env,num_states, num_actions, no_rbf, gamma=0.99, sigma=0.5, alpha_value=0.0005, alpha_policy=0.001):
+    def __init__(self, env,num_states, num_actions, no_rbf, gamma=0.99, sigma=0.9, alpha_value=0.01, alpha_policy=0.001):
         # Upper and lower limits of the state
 
         self.min_state = env.min_state
@@ -154,7 +154,7 @@ if __name__ == "__main__":
 
     high = [1.0,1.0,1.0]
     low = [-1.0,-1.0,-1.0]
-    no_rbf = 5
+    no_rbf = 3
     rbf_sigma = 1.0/(no_rbf - 1)
 
     centers = computeRBFcenters(high, low, no_rbf)
