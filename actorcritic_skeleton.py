@@ -2,9 +2,7 @@ import numpy as np
 from pendulum_v2 import PendulumEnv
 
 import pdb
-import sklearn.pipeline
-from sklearn.kernel_approximation import RBFSampler
-
+import matplotlib.pyplot as plt
 
 
 class ActorCritic(object):
@@ -12,7 +10,7 @@ class ActorCritic(object):
     # TODO fill in this function to set up the Actor Critic model.
     # You may add extra parameters to this function to help with discretization
     # Also, you will need to tune the sigma value and learning rates
-    def __init__(self, env,num_states, num_actions, no_rbf, gamma=0.99, sigma=0.9, alpha_value=0.01, alpha_policy=0.001):
+    def __init__(self, env,num_states, num_actions, no_rbf, gamma=0.99, sigma=0.9, alpha_value=0.1, alpha_policy=0.01):
         # Upper and lower limits of the state
 
         self.min_state = env.min_state
@@ -74,11 +72,10 @@ class ActorCritic(object):
         self.theta +=   self.alpha_policy*I*advantage*np.reshape(grad,[-1,1])
 
 
-def train(env,policy):
-
-    num_episodes = 10000
+def train(env,policy, num_episodes = 1000):
 
     # TODO: write training and plotting code here
+    score_log = []
     for i in range(num_episodes):
         I = 1
         state = env.reset()
@@ -87,11 +84,12 @@ def train(env,policy):
         feature_state = rbf(state, centers, rbf_sigma)
         # feature_state = featurizer.transform([state])
         done = False
-        print(i)
+        score = 0
+        print(i+1)
         while done == False:
 
             action = policy.act(feature_state)
-            env.render()
+            #env.render()
             next_state, reward, done, blah= env.step(action)
 
             # next_state = compute2dstate(next_state)
@@ -102,9 +100,12 @@ def train(env,policy):
             policy.update(feature_state, action, reward, feature_next_state, done, I)
             I = policy.gamma*I
             feature_state = feature_next_state
-
-    env.close()
-    return
+            score+=reward
+        print(score)
+        if (i+1)%100 == 0:
+            score_log.append(score)
+    #env.close()
+    return score_log
 
 
 # def compute2dstate(state):
@@ -125,8 +126,6 @@ def rbf(state, centers, rbf_sigma):
     for c in range(0, len(centers)):
         rbf_eval =  np.exp(-np.linalg.norm(state - centers[c,:])**2/(2*(rbf_sigma**2)))
         phi.append(rbf_eval)
-
-
     return np.asarray(phi)
 #
 def computeRBFcenters(high,low,no_rbf):
@@ -156,26 +155,20 @@ if __name__ == "__main__":
     low = [-1.0,-1.0,-1.0]
     no_rbf = 3
     rbf_sigma = 1.0/(no_rbf - 1)
+    num_episodes = 2000
 
     centers = computeRBFcenters(high, low, no_rbf)
     no_centers = len(centers)
-    # env.reset()
-    # observation_examples = []
-    # for i in range(300):
-    # 	s,r,d,_ = env.step([1.])
-    #
-    #     # s = compute2dstate(s)
-    # 	observation_examples.append(s)
-    #
-    # # Create radial basis function sampler to convert states to features for nonlinear function approx
-    # featurizer = sklearn.pipeline.FeatureUnion([
-    #         ("rbf1", RBFSampler(gamma=5.0, n_components=100)),
-    #         ("rbf2", RBFSampler(gamma=2.0, n_components=100)),
-    #         ("rbf3", RBFSampler(gamma=1.0, n_components=100)),
-    #         ("rbf4", RBFSampler(gamma=0.5, n_components=100))
-    # 		])
-    # # Fit featurizer to our samples
-    # featurizer.fit(np.array(observation_examples))
-    # no_centers = 400
+
     policy = ActorCritic(env,3,1,no_centers)
-    train(env, policy)
+    score = train(env, policy, num_episodes)
+    pdb.set_trace()
+    plt.plot(np.linspace(0,2000,20), score)
+    plt.xlabel("Number of Episodes")
+    plt.ylabel("Rewards")
+    plt.show()
+
+    ## plot 1 alpha_value = 0.05 alpha_policy = 0.0001
+    ## plot 2 alpha_value = 0.005 alpha_policy = 0.0001
+    ## plot 3 alpha_value = 0.1 alpha_policy = 0.01
+    ## plot 4 alpha_value = 0.1 alpha_policy = 0.001
